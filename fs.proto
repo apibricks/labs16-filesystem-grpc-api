@@ -37,7 +37,7 @@ message PathArguments {
 message Command {
   Path cwd = 1;
   string command = 2;
-  map env = 3;
+  map<string, string> env = 3;
 }
 
 message CommandOutput {
