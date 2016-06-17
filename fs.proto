@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package fs;
+
+message Empty {
+
+}
+
+message String {
+  string txt = 1;
+}
+
+message Bytes {
+  bytes data = 1;
+}
+
+message Content {
+  Path path = 1;
+  Bytes content = 2;
+}
+
+message Path {
+  string path = 1;
+  enum PathType {
+    NONE = 1;
+    FILE = 2;
+    DIR = 3;
+    LINK = 4;
+  }
+  PathType type = 2;
+}
+
+message PathArguments {
+  repeated Path paths = 1;
+}
+
+message Command {
+  Path cwd = 1;
+  string command = 2;
+  map env = 3;
+}
+
+message CommandOutput {
+  string stdout = 1;
+  string stderr = 2;
+  int32 code = 3;
+}
+
+service FileSystem {
+  rpc createDir(Path) returns (Empty) {}
+
+  rpc createFile(Path) returns (Empty) {}
+
+  rpc copy(repeated Path) returns (Empty) {}
+
+  rpc move(repeated Path) returns (Empty) {}
+
+  rpc delete(repeated Path) returns (Empty) {}
+
+  rpc exists(Path) returns (Path) {}
+
+  rpc readFile(Path) returns (stream Content) {}
+
+  rpc writeFile(stream Content) returns (Empty) {}
+
+  rpc readDir(Path) returns (stream Content) {}
+
+  rpc writeDir(stream Content) returns (Empty) {}
+
+  rpc exec(Command) returns (CommandOutput) {}}
+
+  rpc execStream(Command) returns (stream CommandOutput) {}
+}
