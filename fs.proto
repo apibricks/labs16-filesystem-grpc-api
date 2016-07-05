@@ -59,7 +59,7 @@ service FileSystem {
 
   rpc move(Paths) returns (Empty) {}
 
-  //rpc delete_path(Paths) returns (Empty) {}
+  rpc deletePaths(Paths) returns (Empty) {}
 
   rpc exists(Path) returns (Path) {}
 

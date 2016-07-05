@@ -94,8 +94,21 @@ function move(call, callback) {
   callback(null, {})
 }
 
-function delete_path(call, callback) {
-  callback(null, {})
+function deletePaths(call, callback) {
+  runExistingPlaybookSync('delete',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     CONNECTION: 'local',
+     PATH: call.request.paths[0].path
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      callback(null, {})
+    }, err => {
+      console.error(err);
+      callback(null, {})
+    })
 }
 
 function exists(call, callback) {
@@ -132,7 +145,7 @@ server.addProtoService(fs_proto.FileSystem.service, {
   createFile: createFile,
   copy: copy,
   move: move,
-  delete_path: delete_path,
+  deletePaths: deletePaths,
   exists: exists,
   readFile: readFile,
   writeFile: writeFile,
