@@ -16,8 +16,7 @@ COPY ansible.cfg fs.proto server.js tasks /home/runner/
 
 COPY fs.proto /api/main.proto
 
-RUN chown -R runner /home/runner && \
-    chmod +x /home/runner/ec2.py
+RUN chown -R runner /home/runner
 
 USER runner
 
