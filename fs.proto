@@ -30,6 +30,10 @@ message Path {
   PathType type = 2;
 }
 
+message Paths {
+  repeated Path paths = 1;
+}
+
 message PathArguments {
   repeated Path paths = 1;
 }
@@ -51,11 +55,11 @@ service FileSystem {
 
   rpc createFile(Path) returns (Empty) {}
 
-  rpc copy(repeated Path) returns (Empty) {}
+  rpc copy(Paths) returns (Empty) {}
 
-  rpc move(repeated Path) returns (Empty) {}
+  rpc move(Paths) returns (Empty) {}
 
-  rpc delete(repeated Path) returns (Empty) {}
+  //rpc delete_path(Paths) returns (Empty) {}
 
   rpc exists(Path) returns (Path) {}
 
@@ -67,7 +71,7 @@ service FileSystem {
 
   rpc writeDir(stream Content) returns (Empty) {}
 
-  rpc exec(Command) returns (CommandOutput) {}}
+  rpc exec(Command) returns (CommandOutput) {}
 
   rpc execStream(Command) returns (stream CommandOutput) {}
 }
