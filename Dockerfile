@@ -1,12 +1,8 @@
-FROM ubuntu:16.04
+FROM mhart/alpine-node:6.2
 
-RUN useradd -m runner
+RUN adduser -D runner
 
-RUN apt-get update && apt-get install -y ansible python-pip curl
-RUN pip install -U boto
-
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get update && apt-get install -y nodejs
+RUN apk add --no-cache libc6-compat ansible && rm -rf /var/cache/apk/* /root/.cache
 
 WORKDIR /home/runner
 COPY package.json /home/runner/
