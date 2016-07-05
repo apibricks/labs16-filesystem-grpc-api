@@ -33,6 +33,10 @@ function abortCall(call){
   }
 }
 
+function constructCommand(command, env) {
+  return command;
+}
+
 function parseExistsOutput(output) {
   path = {}
   if (output.indexOf('"exists": false') > -1) {
@@ -47,6 +51,7 @@ function parseExistsOutput(output) {
   return path;
 }
 
+// RPC CALLS
 function createFile(call, callback) {
   runExistingPlaybookSync('createFile',
     {HOST: '127.0.0.1',
@@ -178,7 +183,21 @@ function writeDir(call, callback) {
 }
 
 function exec(call, callback) {
-  callback(null, {})
+  runExistingPlaybookSync('exec',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     CONNECTION: 'local',
+     COMMAND: constructCommand(call.request.command, call.request.env),
+     CWD: call.request.cwd.path
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      callback(null, {})
+    }, err => {
+      console.error(err);
+      callback(null, {})
+    })
 }
 
 function execStream(call) {
