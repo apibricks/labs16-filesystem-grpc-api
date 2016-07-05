@@ -91,7 +91,25 @@ function copy(call, callback) {
 }
 
 function move(call, callback) {
-  callback(null, {})
+  if (call.request.paths.length != 2) {
+    callback(null, {});
+    return;
+  }
+  runExistingPlaybookSync('move',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     CONNECTION: 'local',
+     SRC_PATH: call.request.paths[0].path,
+     DST_PATH: call.request.paths[1].path
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      callback(null, {})
+    }, err => {
+      console.error(err);
+      callback(null, {})
+    })
 }
 
 function deletePaths(call, callback) {
