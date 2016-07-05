@@ -1,0 +1,10 @@
+- name: Create directory
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  connection: '{{ CONNECTION }}'
+  tasks:
+    - name: Create directory 
+      file: path='{{ PATH }}' state=directory
