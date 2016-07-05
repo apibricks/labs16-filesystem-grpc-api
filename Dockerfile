@@ -12,8 +12,7 @@ WORKDIR /home/runner
 COPY package.json /home/runner/
 RUN npm install
 
-COPY ansible.cfg fs.proto ec2.ini ec2.py \
-     server.js tasks /home/runner/
+COPY ansible.cfg fs.proto server.js tasks /home/runner/
 
 COPY fs.proto /api/main.proto
 
