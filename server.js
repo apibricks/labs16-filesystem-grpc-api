@@ -33,6 +33,19 @@ function abortCall(call){
   }
 }
 
+function parseExistsOutput(output) {
+  path = {}
+  if (output.indexOf('"exists": false') > -1) {
+    path['type'] = 'NONE';
+  } else if (output.indexOf('"isreg": true') > -1) {
+    path['type'] = 'FILE';
+  } else if (output.indexOf('"isdir": true') > -1) {
+    path['type'] = 'DIR';
+  } else if (output.indexOf('"islnk": true') > -1) {
+    path['type'] = 'LINK';
+  }
+  return path;
+}
 
 function createFile(call, callback) {
   runExistingPlaybookSync('createFile',
@@ -130,7 +143,22 @@ function deletePaths(call, callback) {
 }
 
 function exists(call, callback) {
-  callback(null, {})
+  runExistingPlaybookSync('exists',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     CONNECTION: 'local',
+     PATH: call.request.path
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      res = parseExistsOutput(result.output);
+      res['path'] = call.request.path;
+      callback(null, res);
+    }, err => {
+      console.error('error: ', err);
+      callback(null, {})
+    })
 }
 
 function readFile(call) {
