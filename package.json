@@ -4,6 +4,7 @@
   "dependencies": [
     "grpc",
     "node-ansible",
-    "uuid"
+    "uuid",
+    "tar"
   ]
 }

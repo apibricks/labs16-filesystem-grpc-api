@@ -2,6 +2,7 @@ var fs = require('fs')
 var grpc = require('grpc')
 var Ansible = require('node-ansible')
 var uuid = require('uuid')
+var tar = require('tar')
 
 var PROTO_PATH = __dirname + '/fs.proto'
 var fs_proto = grpc.load(PROTO_PATH).fs;
@@ -201,7 +202,15 @@ function writeDir(call, callback) {
     }
     file.write(content);
   });
-  call.on('end', () => { file.end(); callback(null, {}); });
+  call.on('end', () => { file.end(); });
+  file.on('close', () => {
+    console.log('extracting');
+    fs.createReadStream(filename)
+      .on('error', err => {console.error('Err: ', err);})
+      .pipe(tar.Extract({path:path})
+          .on('error', err => {console.error('Err: ', err);})
+          .on('end', () => {console.log('Extracted');callback(null, {});}));
+  });
   call.on('error', err => { callback(null, {});});
 }
 
