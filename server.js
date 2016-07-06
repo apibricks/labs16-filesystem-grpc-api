@@ -1,6 +1,7 @@
 var fs = require('fs')
 var grpc = require('grpc')
 var Ansible = require('node-ansible')
+var uuid = require('uuid')
 
 var PROTO_PATH = __dirname + '/fs.proto'
 var fs_proto = grpc.load(PROTO_PATH).fs;
@@ -171,7 +172,17 @@ function readFile(call) {
 }
 
 function writeFile(call, callback) {
-  callback(null, {})
+  // write file to local disk
+  file = null;
+  call.on('data', data => {
+    var content = data.content.data;
+    if (file == null && data.path.path) {
+      file = fs.createWriteStream(data.path.path);
+    }
+    file.write(content);
+  });
+  call.on('end', () => { file.end(); callback(null, {}); });
+  call.on('error', err => { callback(null, {}); });
 }
 
 function readDir(call) {
@@ -179,7 +190,19 @@ function readDir(call) {
 }
 
 function writeDir(call, callback) {
-  callback(null, {})
+  // write dir to local disk
+  filename = '/tmp/' + uuid.v1() + '.tar';
+  file = fs.createWriteStream(filename);
+  var path = '';
+  call.on('data', data => {
+    var content = data.content.data;
+    if (data.path && data.path.path) {
+      path = data.path.path;
+    }
+    file.write(content);
+  });
+  call.on('end', () => { file.end(); callback(null, {}); });
+  call.on('error', err => { callback(null, {});});
 }
 
 function exec(call, callback) {
