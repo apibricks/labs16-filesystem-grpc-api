@@ -8,7 +8,7 @@ var PROTO_PATH = __dirname + '/fs.proto'
 var fs_proto = grpc.load(PROTO_PATH).fs;
 
 var SSH_HOST = process.env.SSH_HOST
-var SSH_PORT = process.env.SSH_PORT
+var SSH_PORT = process.env.SSH_PORT || '22'
 var SSH_USER = process.env.SSH_USER
 var SSH_KEY = process.env.SSH_KEY
 var CHROOT = process.env.BASE_PATH
@@ -17,6 +17,13 @@ var SUDO_PASS = process.env.SUDO_PASSWORD
 var SUDO_USER = process.env.SUDO_USER
 var ALLOW_EXEC = process.env.ALLOW_EXEC
 var ALLOW_OVERRIDE_CONFIG = process.env.ALLOW_OVERRIDE_CONFIG
+var CONNECTION = 'local'
+if (SSH_HOST) {
+  CONNECTION = 'ssh'
+} else {
+  SSH_HOSt = '127.0.0.1'
+}
+
 
 
 // HELPER FUNCTIONS
@@ -50,11 +57,15 @@ function abortCall(call){
 function extractOutput(output) {
   var pattern =  /"res": ({[\s\S]*})\n}/
   var result = output.match(pattern);
-  console.log(result[1]);
   return JSON.parse(result[1]);
 }
 
 function constructCommand(command, env) {
+  var vars = '';
+  var keys = Object.keys(env).forEach(key => {
+    vars += key + '=' + env[key] + ' ';
+  });
+  console.log('vars: ', vars);
   return command;
 }
 
@@ -286,9 +297,14 @@ function writeDir(call, callback) {
 
 function exec(call, callback) {
   if (! ALLOW_EXEC) {
-    console.err(ALLOW_EXEC);
     callback({code: grpc.status.INTERNAL, details: 'execution of commands not allowed'});
     return;
+  }
+  var cwd = '';
+  if (call.request.cwd && call.request.cwd.path) {
+    cwd = call.request.cwd.path;
+  } else {
+    cwd = '~';
   }
   runExistingPlaybookSync('exec',
     {HOST: '127.0.0.1',
@@ -296,14 +312,14 @@ function exec(call, callback) {
      REMOTE_USER: '',
      CONNECTION: 'local',
      COMMAND: constructCommand(call.request.command, call.request.env),
-     CWD: call.request.cwd.path
+     CWD: cwd
     }).then(result => {
       console.log(result.code);
       console.log(result.output);
-      callback(null, {})
+      res = extractOutput(result.output);
+      callback(null, {stdout:res.stdout, stderr:res.stderr, code:res.rc})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 

@@ -15,6 +15,7 @@
 ## Copy SSH key
 mkdir -p ~/.ssh/
 echo $SSH_KEY > ~/.ssh/id_rsa
+chmod go-r ~/.ssh/id_rsa
 
 ## Start server
 node server.js

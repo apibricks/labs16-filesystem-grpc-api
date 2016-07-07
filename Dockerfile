@@ -2,7 +2,7 @@ FROM mhart/alpine-node:6.2
 
 RUN adduser -D runner
 
-RUN apk add --no-cache libc6-compat ansible && rm -rf /var/cache/apk/* /root/.cache
+RUN apk add --no-cache libc6-compat ansible openssh && rm -rf /var/cache/apk/* /root/.cache
 
 WORKDIR /home/runner
 COPY package.json /home/runner/
