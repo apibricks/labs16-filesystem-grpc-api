@@ -7,6 +7,17 @@ var tar = require('tar')
 var PROTO_PATH = __dirname + '/fs.proto'
 var fs_proto = grpc.load(PROTO_PATH).fs;
 
+var SSH_HOST = process.env.SSH_HOST
+var SSH_PORT = process.env.SSH_PORT
+var SSH_USER = process.env.SSH_USER
+var SSH_KEY = process.env.SSH_KEY
+var CHROOT = process.env.BASE_PATH
+var SUDO = process.env.SUDO
+var SUDO_PASS = process.env.SUDO_PASSWORD
+var SUDO_USER = process.env.SUDO_USER
+var ALLOW_EXEC = process.env.ALLOW_EXEC
+var ALLOW_OVERRIDE_CONFIG = process.env.ALLOW_OVERRIDE_CONFIG
+
 
 // HELPER FUNCTIONS
 
@@ -35,9 +46,23 @@ function abortCall(call){
   }
 }
 
+
+function extractOutput(output) {
+  var pattern =  /"res": ({[\s\S]*})\n}/
+  var result = output.match(pattern);
+  console.log(result[1]);
+  return JSON.parse(result[1]);
+}
+
 function constructCommand(command, env) {
   return command;
 }
+
+function returnErrorCallback(callback, err) {
+  console.error('ERROR: ', err);
+  callback({code: grpc.status.INTERNAL, details: err});
+}
+
 
 function parseExistsOutput(output) {
   path = {}
@@ -53,6 +78,40 @@ function parseExistsOutput(output) {
   return path;
 }
 
+function moveToRemoteServer(callback, src, dest) {
+  runExistingPlaybookSync('moveToServer',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     SRC_PATH: src,
+     DST_PATH: dest
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      callback(null, {})
+    }, err => {
+      returnErrorCallback(callback, err);
+    })
+}
+
+function moveToLocalServer(callback, src, dest) {
+  runExistingPlaybookSync('move',
+    {HOST: '127.0.0.1',
+     EXECUTE_AS_SUDO: 'false',
+     REMOTE_USER: '',
+     CONNECTION: 'local',
+     SRC_PATH: src,
+     DST_PATH: dest
+    }).then(result => {
+      console.log(result.code);
+      console.log(result.output);
+      callback(null, {})
+    }, err => {
+      returnErrorCallback(callback, err);
+    })
+
+}
+
 // RPC CALLS
 function createFile(call, callback) {
   runExistingPlaybookSync('createFile',
@@ -66,8 +125,7 @@ function createFile(call, callback) {
       console.log(result.output);
       callback(null, {})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
@@ -83,14 +141,13 @@ function createDir(call, callback) {
       console.log(result.output);
       callback(null, {})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
 function copy(call, callback) {
   if (call.request.paths.length != 2) {
-    callback(null, {});
+    callback({code: grpc.status.INTERNAL, details: '2 paths required'});
     return;
   }
   runExistingPlaybookSync('copy',
@@ -105,14 +162,13 @@ function copy(call, callback) {
       console.log(result.output);
       callback(null, {})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
 function move(call, callback) {
   if (call.request.paths.length != 2) {
-    callback(null, {});
+    callback({code: grpc.status.INTERNAL, details: '2 paths required'});
     return;
   }
   runExistingPlaybookSync('move',
@@ -127,8 +183,7 @@ function move(call, callback) {
       console.log(result.output);
       callback(null, {})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
@@ -144,8 +199,7 @@ function deletePaths(call, callback) {
       console.log(result.output);
       callback(null, {})
     }, err => {
-      console.error(err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
@@ -163,8 +217,7 @@ function exists(call, callback) {
       res['path'] = call.request.path;
       callback(null, res);
     }, err => {
-      console.error('error: ', err);
-      callback(null, {})
+      returnErrorCallback(callback, err);
     })
 }
 
@@ -174,16 +227,26 @@ function readFile(call) {
 
 function writeFile(call, callback) {
   // write file to local disk
+  filename = '/tmp/' + uuid.v1();
   file = null;
+  var remotePath = '';
   call.on('data', data => {
     var content = data.content.data;
     if (file == null && data.path.path) {
-      file = fs.createWriteStream(data.path.path);
+      file = fs.createWriteStream(filename);
+      remotePath = data.path.path;
     }
     file.write(content);
   });
-  call.on('end', () => { file.end(); callback(null, {}); });
-  call.on('error', err => { callback(null, {}); });
+  call.on('end', () => {
+    file.end();
+    if (false) {
+      moveToRemoteServer(callback, filename, remotePath);
+    } else {
+      moveToLocalServer(callback, filename, remotePath);
+    }
+  });
+  call.on('error', err => { returnErrorCallback(callback, err); });
 }
 
 function readDir(call) {
@@ -194,11 +257,11 @@ function writeDir(call, callback) {
   // write dir to local disk
   filename = '/tmp/' + uuid.v1() + '.tar';
   file = fs.createWriteStream(filename);
-  var path = '';
+  var remotePath = '';
   call.on('data', data => {
     var content = data.content.data;
     if (data.path && data.path.path) {
-      path = data.path.path;
+      remotePath = data.path.path;
     }
     file.write(content);
   });
@@ -209,12 +272,24 @@ function writeDir(call, callback) {
       .on('error', err => {console.error('Err: ', err);})
       .pipe(tar.Extract({path:path})
           .on('error', err => {console.error('Err: ', err);})
-          .on('end', () => {console.log('Extracted');callback(null, {});}));
+          .on('end', () => {
+            console.log('Extracted');
+            if (false) {
+              moveToRemoteServer(callback, filename, remotePath);
+            } else {
+              moveToLocalServer(callback, filename, remotePath);
+            }
+          }));
   });
-  call.on('error', err => { callback(null, {});});
+  call.on('error', err => { returnErrorCallback(callback, err); });
 }
 
 function exec(call, callback) {
+  if (! ALLOW_EXEC) {
+    console.err(ALLOW_EXEC);
+    callback({code: grpc.status.INTERNAL, details: 'execution of commands not allowed'});
+    return;
+  }
   runExistingPlaybookSync('exec',
     {HOST: '127.0.0.1',
      EXECUTE_AS_SUDO: 'false',

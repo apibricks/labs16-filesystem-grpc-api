@@ -8,7 +8,7 @@ WORKDIR /home/runner
 COPY package.json /home/runner/
 RUN npm install
 
-COPY ansible.cfg fs.proto server.js tasks /home/runner/
+COPY ansible.cfg fs.proto server.js tasks startup.sh /home/runner/
 
 COPY fs.proto /api/main.proto
 
@@ -16,4 +16,4 @@ RUN chown -R runner /home/runner
 
 USER runner
 
-CMD ["node", "server.js"]
+CMD ["sh", "startup.sh"]
