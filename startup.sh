@@ -13,9 +13,11 @@
 # ALLOW_OVERRIDE_CONFIG
 
 ## Copy SSH key
-mkdir -p ~/.ssh/
-echo $SSH_KEY > ~/.ssh/id_rsa
-chmod go-r ~/.ssh/id_rsa
+cp -r /ssh_config ~/.ssh
+echo "$SSH_KEY" > ~/.ssh/id_dsa
+chmod go-r ~/.ssh/*
+
+echo "$SSH_HOST ansible_python_interpreter=/usr/bin/python2" > hosts
 
 ## Start server
 node server.js

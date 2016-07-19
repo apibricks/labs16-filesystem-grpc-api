@@ -10,21 +10,19 @@ var fs_proto = grpc.load(PROTO_PATH).fs;
 var SSH_HOST = process.env.SSH_HOST
 var SSH_PORT = process.env.SSH_PORT || '22'
 var SSH_USER = process.env.SSH_USER
-var SSH_KEY = process.env.SSH_KEY
 var CHROOT = process.env.BASE_PATH
 var SUDO = process.env.SUDO
 var SUDO_PASS = process.env.SUDO_PASSWORD
 var SUDO_USER = process.env.SUDO_USER
 var ALLOW_EXEC = process.env.ALLOW_EXEC
 var ALLOW_OVERRIDE_CONFIG = process.env.ALLOW_OVERRIDE_CONFIG
+
 var CONNECTION = 'local'
 if (SSH_HOST) {
   CONNECTION = 'ssh'
 } else {
   SSH_HOSt = '127.0.0.1'
 }
-
-
 
 // HELPER FUNCTIONS
 
@@ -91,9 +89,9 @@ function parseExistsOutput(output) {
 
 function moveToRemoteServer(callback, src, dest) {
   runExistingPlaybookSync('moveToServer',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
+     REMOTE_USER: SSH_USER,
      SRC_PATH: src,
      DST_PATH: dest
     }).then(result => {
@@ -107,7 +105,7 @@ function moveToRemoteServer(callback, src, dest) {
 
 function moveToLocalServer(callback, src, dest) {
   runExistingPlaybookSync('move',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
      REMOTE_USER: '',
      CONNECTION: 'local',
@@ -126,10 +124,10 @@ function moveToLocalServer(callback, src, dest) {
 // RPC CALLS
 function createFile(call, callback) {
   runExistingPlaybookSync('createFile',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      PATH: call.request.path
     }).then(result => {
       console.log(result.code);
@@ -142,10 +140,10 @@ function createFile(call, callback) {
 
 function createDir(call, callback) {
   runExistingPlaybookSync('createDir',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      PATH: call.request.path
     }).then(result => {
       console.log(result.code);
@@ -162,10 +160,10 @@ function copy(call, callback) {
     return;
   }
   runExistingPlaybookSync('copy',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      SRC_PATH: call.request.paths[0].path,
      DST_PATH: call.request.paths[1].path
     }).then(result => {
@@ -183,10 +181,10 @@ function move(call, callback) {
     return;
   }
   runExistingPlaybookSync('move',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      SRC_PATH: call.request.paths[0].path,
      DST_PATH: call.request.paths[1].path
     }).then(result => {
@@ -200,10 +198,10 @@ function move(call, callback) {
 
 function deletePaths(call, callback) {
   runExistingPlaybookSync('delete',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      PATH: call.request.paths[0].path
     }).then(result => {
       console.log(result.code);
@@ -216,10 +214,10 @@ function deletePaths(call, callback) {
 
 function exists(call, callback) {
   runExistingPlaybookSync('exists',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      PATH: call.request.path
     }).then(result => {
       console.log(result.code);
@@ -307,10 +305,10 @@ function exec(call, callback) {
     cwd = '~';
   }
   runExistingPlaybookSync('exec',
-    {HOST: '127.0.0.1',
+    {HOST: SSH_HOST,
      EXECUTE_AS_SUDO: 'false',
-     REMOTE_USER: '',
-     CONNECTION: 'local',
+     REMOTE_USER: SSH_USER,
+     CONNECTION: CONNECTION,
      COMMAND: constructCommand(call.request.command, call.request.env),
      CWD: cwd
     }).then(result => {
