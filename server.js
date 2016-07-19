@@ -105,7 +105,7 @@ function moveToRemoteServer(callback, src, dest) {
 
 function moveToLocalServer(callback, src, dest) {
   runExistingPlaybookSync('move',
-    {HOST: SSH_HOST,
+    {HOST: '127.0.0.1',
      EXECUTE_AS_SUDO: 'false',
      REMOTE_USER: '',
      CONNECTION: 'local',
@@ -249,7 +249,7 @@ function writeFile(call, callback) {
   });
   call.on('end', () => {
     file.end();
-    if (false) {
+    if (CONNECTION != 'local') {
       moveToRemoteServer(callback, filename, remotePath);
     } else {
       moveToLocalServer(callback, filename, remotePath);
@@ -283,7 +283,7 @@ function writeDir(call, callback) {
           .on('error', err => {console.error('Err: ', err);})
           .on('end', () => {
             console.log('Extracted');
-            if (false) {
+            if (connection != 'local') {
               moveToRemoteServer(callback, filename, remotePath);
             } else {
               moveToLocalServer(callback, filename, remotePath);
