@@ -1,11 +1,13 @@
 FROM mhart/alpine-node:6.2
 
+VOLUME /ssh_config
+VOLUME /api
+
+EXPOSE 50051
+
 RUN adduser -D runner
 
 RUN apk add --no-cache libc6-compat ansible openssh && rm -rf /var/cache/apk/* /root/.cache
-
-VOLUME /ssh_config
-VOLUME /api
 
 WORKDIR /home/runner
 COPY package.json /home/runner/
