@@ -1,6 +1,5 @@
 FROM mhart/alpine-node:6.2
 
-VOLUME /ssh_config
 VOLUME /api
 
 EXPOSE 50051

@@ -11,18 +11,16 @@ var fs_proto = grpc.load(PROTO_PATH).fs;
 var SSH_HOST = process.env.SSH_HOST
 var SSH_PORT = process.env.SSH_PORT || '22'
 var SSH_USER = process.env.SSH_USER
-var CHROOT = process.env.BASE_PATH
 var SUDO = process.env.SUDO
 var SUDO_PASS = process.env.SUDO_PASSWORD
 var SUDO_USER = process.env.SUDO_USER
 var ALLOW_EXEC = process.env.ALLOW_EXEC
-var ALLOW_OVERRIDE_CONFIG = process.env.ALLOW_OVERRIDE_CONFIG
 
 var CONNECTION = 'local'
 if (SSH_HOST) {
   CONNECTION = 'ssh'
 } else {
-  SSH_HOSt = '127.0.0.1'
+  SSH_HOST = '127.0.0.1'
 }
 
 // HELPER FUNCTIONS
@@ -243,7 +241,7 @@ function exists(call, callback) {
 }
 
 function readFile(call) {
-  var path = call.request.path.path;
+  var path = call.request.path;
   if (CONNECTION != 'local') {
     var filename = '/tmp/' + uuid.v1();
     runExistingPlaybookSync('fetch',
@@ -289,7 +287,7 @@ function writeFile(call, callback) {
 }
 
 function readDir(call) {
-  var path = call.request.path.path;
+  var path = call.request.path;
   var filename = '/tmp/' + uuid.v1() + '.tar';
   if (CONNECTION != 'local') {
     runExistingPlaybookSync('fetchDir',
@@ -329,13 +327,11 @@ function writeDir(call, callback) {
   });
   call.on('end', () => { file.end(); });
   file.on('close', () => {
-    console.log('extracting');
     fs.createReadStream(filename)
       .on('error', err => {console.error('Err: ', err);})
       .pipe(tar.Extract({path:path})
           .on('error', err => {console.error('Err: ', err);})
           .on('end', () => {
-            console.log('Extracted');
             if (connection != 'local') {
               moveToRemoteServer(callback, filename, remotePath);
             } else {

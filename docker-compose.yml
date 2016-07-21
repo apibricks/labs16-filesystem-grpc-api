@@ -1,0 +1,17 @@
+version: '2'
+services:
+  fsapi:
+    build: .
+    env_file: ./env/filesystem.env
+    volumes:
+    - /api
+  hubot_fs:
+    image: hubotgrpc/hubot-grpc
+    env_file: env/hubot.env
+    environment:
+      - API_HOST=server
+      - API_PORT=50051
+    links:
+      - fsapi:server
+    volumes_from:
+      - fsapi
