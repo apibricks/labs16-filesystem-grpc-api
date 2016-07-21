@@ -1,0 +1,10 @@
+- name: Create File
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  connection: '{{ CONNECTION }}'
+  tasks:
+    - name: Create File
+      file: path='{{ PATH }}' state=touch

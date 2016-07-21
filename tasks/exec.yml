@@ -1,0 +1,12 @@
+- name: Execute custom command
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  connection: '{{ CONNECTION }}'
+  tasks:
+    - shell: chdir='{{ CWD }}' '{{ COMMAND }}'
+      register: res
+    - name: Log output
+      debug: var=res

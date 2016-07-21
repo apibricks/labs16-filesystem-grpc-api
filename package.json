@@ -1,0 +1,10 @@
+{
+  "name": "filesystem-api",
+  "version": "0.1.0",
+  "dependencies": [
+    "grpc",
+    "node-ansible",
+    "uuid",
+    "tar"
+  ]
+}

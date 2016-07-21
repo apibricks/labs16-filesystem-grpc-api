@@ -1,0 +1,13 @@
+- name: Check if path exists
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  connection: '{{ CONNECTION }}'
+  tasks:
+    - name: Check path
+      stat: path='{{ PATH }}'
+      register: path_info
+    - name: Debug Path info
+      debug: var=path_info

@@ -1,0 +1,10 @@
+- name: Copy files and directories
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  connection: '{{ CONNECTION }}'
+  tasks:
+    - name: Copy operation
+      copy: src='{{ SRC_PATH }}' dest='{{ DST_PATH }}' remote_src=true
