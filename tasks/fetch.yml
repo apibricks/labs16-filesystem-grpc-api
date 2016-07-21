@@ -1,0 +1,9 @@
+- name: Fetch files
+  hosts: '{{ HOST }}'
+  gather_facts: False
+  remote_user: '{{ REMOTE_USER }}'
+  become: '{{ EXECUTE_AS_SUDO }}'
+  become_method: sudo
+  tasks:
+    - name: Copy operation
+      fetch: src='{{ SRC_PATH }}' dest='{{ DST_PATH }}' fail_on_missing=yes flat=yes

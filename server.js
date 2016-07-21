@@ -3,6 +3,7 @@ var grpc = require('grpc')
 var Ansible = require('node-ansible')
 var uuid = require('uuid')
 var tar = require('tar')
+var fstream = require('fstream')
 
 var PROTO_PATH = __dirname + '/fs.proto'
 var fs_proto = grpc.load(PROTO_PATH).fs;
@@ -51,6 +52,17 @@ function abortCall(call){
   }
 }
 
+function readLocalFile(path, call) {
+  var file = fs.readFile(path, (err, data) => {
+    if (err) {
+      console.log('Err: ', err);
+      abortCall(call);
+      return;
+    }
+    call.write({content:{data:data}});
+    call.end();
+  });
+}
 
 function extractOutput(output) {
   var pattern =  /"res": ({[\s\S]*})\n}/
@@ -231,13 +243,31 @@ function exists(call, callback) {
 }
 
 function readFile(call) {
-  abortCall(call);
+  var path = call.request.path.path;
+  if (CONNECTION != 'local') {
+    var filename = '/tmp/' + uuid.v1();
+    runExistingPlaybookSync('fetch',
+      {HOST: SSH_HOST,
+       EXECUTE_AS_SUDO: 'false',
+       REMOTE_USER: SSH_USER,
+       SRC_PATH: path,
+       DST_PATH: filename
+      }).then(result => {
+        console.log(result.code);
+        console.log(result.output);
+        readLocalFile(filename, call);
+      }, err => {
+        returnErrorCallback(callback, err);
+      })
+  } else {
+    readLocalFile(path, call);
+  }
 }
 
 function writeFile(call, callback) {
   // write file to local disk
-  filename = '/tmp/' + uuid.v1();
-  file = null;
+  var filename = '/tmp/' + uuid.v1();
+  var file = null;
   var remotePath = '';
   call.on('data', data => {
     var content = data.content.data;
@@ -259,7 +289,30 @@ function writeFile(call, callback) {
 }
 
 function readDir(call) {
-  abortCall(call);
+  var path = call.request.path.path;
+  var filename = '/tmp/' + uuid.v1() + '.tar';
+  if (CONNECTION != 'local') {
+    runExistingPlaybookSync('fetchDir',
+      {HOST: SSH_HOST,
+       EXECUTE_AS_SUDO: 'false',
+       REMOTE_USER: SSH_USER,
+       SRC_PATH: path,
+       DST_PATH: filename
+      }).then(result => {
+        console.log(result.code);
+        console.log(result.output);
+        readLocalFile(filename, call);
+      }, err => {
+        returnErrorCallback(callback, err);
+      })
+  } else {
+    var dirDest = fs.createWriteStream(filename);
+    fstream.Reader({ path: path, type: 'Directory' })
+      .on('error', err => console.error('Error: ', err))
+      .pipe(tar.Pack().on('error', err => console.log('Error: ', err)))
+      .pipe(dirDest)
+    readLocalFile(filename, call);
+  }
 }
 
 function writeDir(call, callback) {
